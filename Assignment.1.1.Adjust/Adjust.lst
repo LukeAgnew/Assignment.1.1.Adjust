@@ -1,0 +1,1003 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000                 AREA             Adjust, CODE, READONLY
+    2 00000000                 IMPORT           main
+    3 00000000                 IMPORT           getPicAddr
+    4 00000000                 IMPORT           putPic
+    5 00000000                 IMPORT           getPicWidth
+    6 00000000                 IMPORT           getPicHeight
+    7 00000000                 EXPORT           start
+    8 00000000                 PRESERVE8
+    9 00000000         
+   10 00000000         start
+   11 00000000 EBFFFFFE        BL               getPicAddr  ; load the start ad
+                                                            dress of the image 
+                                                            in R4
+   12 00000004 E1A04000        MOV              R4, R0
+   13 00000008 EBFFFFFE        BL               getPicHeight ; load the height 
+                                                            of the image (rows)
+                                                             in R5
+   14 0000000C E1A05000        MOV              R5, R0
+   15 00000010 EBFFFFFE        BL               getPicWidth ; load the width of
+                                                             the image (columns
+                                                            ) in R6
+   16 00000014 E1A06000        MOV              R6, R0
+   17 00000018         
+   18 00000018 E3A0701E        LDR              R7,= 30     ; Alpha = 30
+   19 0000001C E3A08023        LDR              R8,= 35     ; Beta = 
+   20 00000020         
+   21 00000020 E1A00004        MOV              R0, R4      ; starting address 
+                                                            parameter
+   22 00000024 E1A01007        MOV              R1, R7      ; value of Alpha pa
+                                                            rameter
+   23 00000028 E1A02008        MOV              R2, R8      ; value of Beta par
+                                                            ameter
+   24 0000002C E1A03005        MOV              R3, R5      ; image height para
+                                                            meter
+   25 00000030 E52D6004        STR              R6, [SP, #-4]! ; image width pa
+                                                            rameter
+   26 00000034         
+   27 00000034 EB000002        BL               adjustImage ; invoke adjustImag
+                                                            e(address, Alpha, B
+                                                            eta, height, width)
+                                                            
+   28 00000038         
+   29 00000038 E28DD004        ADD              SP,SP,#4    ; pop image width p
+                                                            arameter off the st
+                                                            ack
+   30 0000003C         
+   31 0000003C EBFFFFFE        BL               putPic      ; re-display the up
+                                                            dated image
+   32 00000040         
+   33 00000040 EAFFFFFE 
+                       stop    B                stop
+   34 00000044         
+   35 00000044         
+   36 00000044         ; adjustImage subroutine
+   37 00000044         ; Adjusts the brightness and contrast of an image accord
+                       ing
+   38 00000044         ; to the values of Alpha and Beta that are passed to the
+                        subroutine
+   39 00000044         ; parameters R0: starting address of the array/image
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+   40 00000044         ;    R1: value of Alpha
+   41 00000044         ;    R2: value of Beta
+   42 00000044         ;    R3: the height of the image
+   43 00000044         ;      [SP]:the width of the image
+   44 00000044         
+   45 00000044         adjustImage
+   46 00000044 E92D47F0        STMFD            SP!, {R4-R10, lr} 
+                                                            ; save registers
+   47 00000048         
+   48 00000048 E59D4020        LDR              R4, [SP, #0+32] ; load the imag
+                                                            e width parameter
+   49 0000004C         
+   50 0000004C E3A0A010        LDR              R10,=16     ; constant 16
+   51 00000050         
+   52 00000050 E3A05000        LDR              R5,=0
+   53 00000054         fori
+   54 00000054 E1550003        CMP              R5,R3       ; for (int i=0; i<h
+                                                            eight; i++)
+   55 00000058 2A000050        BHS              endfori     ; {
+   56 0000005C         
+   57 0000005C E3A06000        LDR              R6,=0
+   58 00000060         forj
+   59 00000060 E1560004        CMP              R6,R4       ; for (int j=0; j<w
+                                                            idth; j++)
+   60 00000064 2A00004B        BHS              endforj     ; {
+   61 00000068         
+   62 00000068 E92D000F        STMFD            SP!, {R0-R3} ; save address, Al
+                                                            pha, Beta and heigh
+                                                            t to the system sta
+                                                            ck 
+   63 0000006C         
+   64 0000006C E1A01005        MOV              R1, R5      ; index i parameter
+                                                            
+   65 00000070 E1A02006        MOV              R2, R6      ; index j parameter
+                                                            
+   66 00000074 E1A03004        MOV              R3, R4      ; width parameter
+   67 00000078         
+   68 00000078 EB000049        BL               getPixelR   ; invoke getPixelR(
+                                                            address, i, j, widt
+                                                            h)
+   69 0000007C E1A07000        MOV              R7, R0      ; Rij value
+   70 00000080 E8BD000F        LDMFD            SP!, {R0-R3} ; restore address,
+                                                             Alpha, Beta and he
+                                                            ight from the syste
+                                                            m stack
+   71 00000084         
+   72 00000084 E92D000F        STMFD            SP!, {R0-R3} ; save address, Al
+                                                            pha, Beta and heigh
+                                                            t to the system sta
+                                                            ck
+   73 00000088 E1A01005        MOV              R1, R5      ; index i parameter
+                                                            
+   74 0000008C E1A02006        MOV              R2, R6      ; index j parameter
+                                                            
+   75 00000090 E1A03004        MOV              R3, R4      ; width parameter
+   76 00000094         
+   77 00000094 EB000048        BL               getPixelG   ; invoke getPixelG(
+                                                            address, i, j, widt
+                                                            h)
+
+
+
+ARM Macro Assembler    Page 3 
+
+
+   78 00000098 E1A08000        MOV              R8, R0      ; Gij value
+   79 0000009C E8BD000F        LDMFD            SP!, {R0-R3} ; restore address,
+                                                             Alpha, Beta and he
+                                                            ight from the syste
+                                                            m stack
+   80 000000A0         
+   81 000000A0 E92D000F        STMFD            SP!, {R0-R3} ; save address, Al
+                                                            pha, Beta and heigh
+                                                            t to the system sta
+                                                            ck
+   82 000000A4 E1A01005        MOV              R1, R5      ; index i parameter
+                                                            
+   83 000000A8 E1A02006        MOV              R2, R6      ; index j parameter
+                                                            
+   84 000000AC E1A03004        MOV              R3, R4      ; width parameter
+   85 000000B0         
+   86 000000B0 EB000049        BL               getPixelB   ; invoke getPixelB(
+                                                            address, i, j, widt
+                                                            h)
+   87 000000B4 E1A09000        MOV              R9, R0      ; Bij value 
+   88 000000B8 E8BD000F        LDMFD            SP!, {R0-R3} ; restore Alpha, B
+                                                            eta and height from
+                                                             the system stack 
+   89 000000BC         
+   90 000000BC E92D0003        STMFD            SP!, {R0-R1} ; save address and
+                                                             Alpha to the syste
+                                                            m stack
+   91 000000C0         
+   92 000000C0 E0070791        MUL              R7,R1,R7    ; Rij × Alpha
+   93 000000C4         
+   94 000000C4 E1A00007        MOV              R0,R7       ; dividend paramete
+                                                            r = Rij × Alpha
+   95 000000C8 E1A0100A        MOV              R1,R10      ; divisor parameter
+                                                             = 16
+   96 000000CC         
+   97 000000CC EB000049        BL               divide      ; invoke divide(div
+                                                            idend, divisor)
+   98 000000D0 E1A07000        MOV              R7,R0       ; R'ij = (Rij× Alph
+                                                            a)/16
+   99 000000D4 E8BD0003        LDMFD            SP!, {R0-R1} ; restore address 
+                                                            and Alpha from the 
+                                                            system stack
+  100 000000D8         
+  101 000000D8 E92D0003        STMFD            SP!, {R0-R1} ; save address and
+                                                             Alpha to the syste
+                                                            m stack
+  102 000000DC         
+  103 000000DC E0080891        MUL              R8,R1,R8    ; Gij × Alpha
+  104 000000E0         
+  105 000000E0 E1A00008        MOV              R0, R8      ; dividend paramete
+                                                            r = Gij × Alpha
+  106 000000E4 E1A0100A        MOV              R1,R10      ; divisor parameter
+                                                             = 16
+  107 000000E8         
+  108 000000E8 EB000042        BL               divide      ; invoke divide(div
+                                                            idend, divisor)
+  109 000000EC E1A08000        MOV              R8,R0       ; G'ij = (Gij× Alph
+                                                            a)/16
+  110 000000F0 E8BD0003        LDMFD            SP!, {R0-R1} ; restore address 
+
+
+
+ARM Macro Assembler    Page 4 
+
+
+                                                            and Alpha from the 
+                                                            system stack
+  111 000000F4         
+  112 000000F4 E92D0003        STMFD            SP!, {R0-R1} ; save address and
+                                                             Alpha to the syste
+                                                            m stack
+  113 000000F8         
+  114 000000F8 E0090991        MUL              R9,R1,R9    ; Bij × Alpha
+  115 000000FC         
+  116 000000FC E1A00009        MOV              R0, R9      ; dividend paramete
+                                                            r = Bij × Alpha
+  117 00000100 E1A0100A        MOV              R1, R10     ; divisor parameter
+                                                             = 16
+  118 00000104         
+  119 00000104 EB00003B        BL               divide      ; invoke divide(div
+                                                            idend, divisor)
+  120 00000108 E1A09000        MOV              R9,R0       ; B'ij = (Bij× Alph
+                                                            a)/16
+  121 0000010C E8BD0003        LDMFD            SP!, {R0-R1} ; restore address 
+                                                            and Alpha from the 
+                                                            system stack
+  122 00000110         
+  123 00000110 E0877002        ADD              R7,R7,R2    ; R'ij = R'ij + Bet
+                                                            a
+  124 00000114 E0888002        ADD              R8,R8,R2    ; G'ij = G'ij + Bet
+                                                            a
+  125 00000118 E0899002        ADD              R9,R9,R2    ; B'ij = B'ij + Bet
+                                                            a
+  126 0000011C         
+  127 0000011C E92D0007        STMFD            SP!, {R0-R2} ; save address to 
+                                                            the system stack
+  128 00000120         
+  129 00000120 E1A00007        MOV              R0,R7       ; redComponent para
+                                                            meter = R'ij
+  130 00000124 E1A01008        MOV              R1,R8       ; greenComponent pa
+                                                            rameter = G'ij
+  131 00000128 E1A02009        MOV              R2,R9       ; blueComponent par
+                                                            ameter = B'ij
+  132 0000012C         
+  133 0000012C EB00003A        BL               checkVals   ; invoke checkVals(
+                                                            redComponent, green
+                                                            Component, blueComp
+                                                            onent)
+  134 00000130         
+  135 00000130 E1A07000        MOV              R7,R0       ; redComponent retu
+                                                            rn value
+  136 00000134 E1A08001        MOV              R8,R1       ; greenComponent re
+                                                            turn value
+  137 00000138 E1A09002        MOV              R9,R2       ; blueComponent ret
+                                                            urn value
+  138 0000013C         
+  139 0000013C E8BD0007        LDMFD            SP!, {R0-R2} ; restore address 
+                                                            from the system sta
+                                                            ck
+  140 00000140         
+  141 00000140 E92D000F        STMFD            SP!, {R0-R3} ; save address, Al
+                                                            pha, Beta and heigh
+                                                            t to the system sta
+                                                            ck
+
+
+
+ARM Macro Assembler    Page 5 
+
+
+  142 00000144         
+  143 00000144 E1A01005        MOV              R1,R5       ; i parameter = i
+  144 00000148 E1A02006        MOV              R2,R6       ; j parameter = j
+  145 0000014C E1A03004        MOV              R3,R4       ; width parameter =
+                                                             width
+  146 00000150 E52D7004        STR              R7, [SP, #-4]! ; store R'ij to 
+                                                            the system stack
+  147 00000154         
+  148 00000154 EB00004A        BL               setPixelR   ; invoke setPixelR(
+                                                            address, i, j, widt
+                                                            h, value)
+  149 00000158 E28DD004        ADD              SP,SP,#4    ; pop parameter off
+                                                             the stack
+  150 0000015C         
+  151 0000015C E1A01005        MOV              R1,R5       ; i parameter = i
+  152 00000160 E1A02006        MOV              R2,R6       ; j parameter = j
+  153 00000164 E1A03004        MOV              R3,R4       ; width parameter =
+                                                             width
+  154 00000168 E52D8004        STR              R8, [SP, #-4]! ; store G'ij to 
+                                                            the system stack
+  155 0000016C         
+  156 0000016C EB00004E        BL               setPixelG   ; invoke setPixelG(
+                                                            address, i, j, widt
+                                                            h, value)
+  157 00000170 E28DD004        ADD              SP,SP,#4    ; pop parameter off
+                                                             the stack
+  158 00000174         
+  159 00000174 E1A01005        MOV              R1,R5       ; i parameter = i
+  160 00000178 E1A02006        MOV              R2,R6       ; j parameter = j
+  161 0000017C E1A03004        MOV              R3,R4       ; width parameter =
+                                                             width
+  162 00000180 E52D9004        STR              R9, [SP, #-4]! ; store B'ij to 
+                                                            the system stack
+  163 00000184         
+  164 00000184 EB000052        BL               setPixelB   ; invoke setPixelB(
+                                                            address, i, j, widt
+                                                            h, value)
+  165 00000188 E28DD004        ADD              SP,SP,#4    ; pop parameter off
+                                                             the stack
+  166 0000018C         
+  167 0000018C E8BD000F        LDMFD            SP!, {R0-R3} ; restore address,
+                                                             Alpha, Beta and he
+                                                            ight from the syste
+                                                            m stack
+  168 00000190         
+  169 00000190 E2866001        ADD              R6,R6,#1
+  170 00000194 EAFFFFB1        B                forj        ; }
+  171 00000198         endforj
+  172 00000198         
+  173 00000198 E2855001        ADD              R5,R5,#1
+  174 0000019C EAFFFFAC        B                fori        ; }
+  175 000001A0         endfori
+  176 000001A0         
+  177 000001A0 E8BD87F0        LDMFD            SP!, {R4-R10, pc} 
+                                                            ; restore registers
+                                                            
+  178 000001A4         
+  179 000001A4         
+  180 000001A4         ; getPixelR subroutine
+
+
+
+ARM Macro Assembler    Page 6 
+
+
+  181 000001A4         ; Retrieves the Red color component of a specified pixel
+                       
+  182 000001A4         ; from a two-dimensional array of pixels.
+  183 000001A4         ; parameters R0: starting address of the array
+  184 000001A4         ;    R1: index i of the pixel
+  185 000001A4         ;    R2: index j of the pixel
+  186 000001A4         ;    R3: width of the array
+  187 000001A4         
+  188 000001A4         getPixelR
+  189 000001A4 E92D4010        STMFD            SP!, {R4, lr} ; save registers
+  190 000001A8         
+  191 000001A8 E0010193        MUL              R1,R3,R1    ; row * rowSize    
+                                                              
+  192 000001AC E0811002        ADD              R1,R1,R2    ; row*rowSize + col
+                                                            umn 
+  193 000001B0         
+  194 000001B0 E7900101        LDR              R0, [R0, R1, LSL #2] ; pixel = 
+                                                            Memory.Word[address
+                                                             + (index * 4)]
+  195 000001B4 E1A00820        MOV              R0,R0, LSR #16 ; redComponent =
+                                                             pixel shifted righ
+                                                            t by 16 bits
+  196 000001B8         
+  197 000001B8 E8BD8010        LDMFD            SP!, {R4, PC} 
+                                                            ; restore registers
+                                                            
+  198 000001BC         
+  199 000001BC         
+  200 000001BC         ; getPixelG subroutine
+  201 000001BC         ; Retrieves the Green color component of a specified pix
+                       el
+  202 000001BC         ; from a two-dimensional array of pixels.
+  203 000001BC         ; parameters R0: starting address of the array
+  204 000001BC         ;    R1: index i of the pixel
+  205 000001BC         ;    R2: index j of the pixel
+  206 000001BC         ;    R3: width of the array
+  207 000001BC         
+  208 000001BC         getPixelG
+  209 000001BC E92D4010        STMFD            SP!, {R4, lr} ; save registers
+  210 000001C0         
+  211 000001C0 E0010193        MUL              R1,R3,R1    ; row * rowSize    
+                                                              
+  212 000001C4 E0811002        ADD              R1,R1,R2    ; row*rowSize + col
+                                                            umn 
+  213 000001C8         
+  214 000001C8 E7900101        LDR              R0, [R0, R1, LSL #2] ; pixel = 
+                                                            Memory.Word[address
+                                                             + (index * 4)]
+  215 000001CC E1A00420        MOV              R0,R0,LSR #8 ; greenComponent =
+                                                             pixel shifted righ
+                                                            t by 8 bits and
+  216 000001D0 E59F4120        LDR              R4,=0xFFFFFF00 ; combined with 
+                                                            a mask to clear the
+                                                             redComponent value
+                                                            
+  217 000001D4 E1C00004        BIC              R0,R0,R4
+  218 000001D8         
+  219 000001D8 E8BD8010        LDMFD            SP!, {R4,PC} 
+                                                            ; restore registers
+
+
+
+ARM Macro Assembler    Page 7 
+
+
+                                                            
+  220 000001DC         
+  221 000001DC         
+  222 000001DC         ; getPixelB subroutine
+  223 000001DC         ; Retrieves the Blue color component of a specified pixe
+                       l
+  224 000001DC         ; from a two-dimensional array of pixels.
+  225 000001DC         ; parameters R0: starting address of the array
+  226 000001DC         ;    R1: index i of the pixel
+  227 000001DC         ;    R2: index j of the pixel
+  228 000001DC         ;    R3: width of the array
+  229 000001DC         
+  230 000001DC         getPixelB
+  231 000001DC E92D4010        STMFD            SP!, {R4, lr} ; save registers
+  232 000001E0         
+  233 000001E0 E0010193        MUL              R1,R3,R1    ; row * rowSize    
+                                                              
+  234 000001E4 E0811002        ADD              R1,R1,R2    ; row*rowSize + col
+                                                            umn 
+  235 000001E8         
+  236 000001E8 E7900101        LDR              R0, [R0, R1, LSL #2] ; pixel = 
+                                                            Memory.Word[address
+                                                             + (index * 4)]
+  237 000001EC E59F4104        LDR              R4,=0xFFFFFF00 ; blueComponent 
+                                                            = pixel combined wi
+                                                            th a mask to clear
+  238 000001F0 E1C00004        BIC              R0,R0,R4    ; the redComponent 
+                                                            and greenComponent 
+                                                            values
+  239 000001F4         
+  240 000001F4 E8BD8010        LDMFD            SP!, {R4,PC} 
+                                                            ; restore registers
+                                                            
+  241 000001F8         
+  242 000001F8         
+  243 000001F8         ; divide subroutine
+  244 000001F8         ; Takes a number (the dividend) and divides it by anothe
+                       r number (the divisor) and
+  245 000001F8         ; then returns the result (the quotient)
+  246 000001F8         ; parameters   R0: The dividend, i.e. the number to be d
+                       ivided
+  247 000001F8         ;      R1: The divisor, i.e. the number to divide into t
+                       he dividend
+  248 000001F8         ; return value R0: quotient
+  249 000001F8         
+  250 000001F8         divide
+  251 000001F8 E92D4010        STMFD            sp!, {R4, lr} ; save registers
+  252 000001FC E3A04000        MOV              R4,#0       ; quotient = 0
+  253 00000200 E1500001 
+                       wh      CMP              R0, R1      ; while (dividend >
+                                                             divisor)
+  254 00000204 3A000002        BLO              endwh       ; {
+  255 00000208 E0400001        SUB              R0, R0, R1  ; dividend = divide
+                                                            nd - divisor
+  256 0000020C E2844001        ADD              R4,R4,#1    ; quotient = quotie
+                                                            nt + 1
+  257 00000210 EAFFFFFA        B                wh          ; }
+  258 00000214         endwh
+  259 00000214 E1A00004        MOV              R0,R4       ; return value = qu
+
+
+
+ARM Macro Assembler    Page 8 
+
+
+                                                            otient
+  260 00000218 E8BD8010        LDMFD            sp!, {R4, pc} 
+                                                            ; restore registers
+                                                            
+  261 0000021C         
+  262 0000021C         
+  263 0000021C         ; checkVals subroutine
+  264 0000021C         ; Checks the value of the passed parameter (an rgb color
+                        component) to see whether
+  265 0000021C         ; it is above 255 or below 0, in which case it sets the 
+                       value to the limit
+  266 0000021C         ; parameters R0: the color component
+  267 0000021C         ; return value R0: the color component
+  268 0000021C         
+  269 0000021C         checkVals
+  270 0000021C E92D4000        STMFD            SP!, {lr}
+  271 00000220         
+  272 00000220         checkRed
+  273 00000220 E35000FF        CMP              R0,#255     ; if (redComponent 
+                                                            > 255)
+  274 00000224 8A00000A        BHI              upperLimitRed ; { branch to upp
+                                                            erLimitRed }
+  275 00000228         
+  276 00000228 E3500000        CMP              R0,#0       ; if (redComponent 
+                                                            < 0)
+  277 0000022C 3A00000A        BLO              lowerLimitRed ; { branch to low
+                                                            erLimitRed }
+  278 00000230         
+  279 00000230         checkGreen
+  280 00000230 E35100FF        CMP              R1,#255     ; if (greenComponen
+                                                            t > 255)
+  281 00000234 8A00000A        BHI              upperLimitGreen ; { branch to u
+                                                            pperLimitGreen }
+  282 00000238         
+  283 00000238 E3510000        CMP              R1,#0       ; if (greenComponen
+                                                            t < 0)
+  284 0000023C 3A00000A        BLO              lowerLimitGreen ; { branch to l
+                                                            owerLimitGreen }
+  285 00000240         
+  286 00000240         checkBlue
+  287 00000240 E35200FF        CMP              R2,#255     ; if (blueComponent
+                                                             > 255)
+  288 00000244 8A00000A        BHI              upperLimitBlue ; { branch to up
+                                                            perLimitGreen }
+  289 00000248         
+  290 00000248 E3520000        CMP              R2,#0       ; if (blueComponent
+                                                             < 0)
+  291 0000024C 3A00000A        BLO              lowerLimitBlue ; { branch to lo
+                                                            werLimitBlue }
+  292 00000250         
+  293 00000250         endcheckVals
+  294 00000250 E8BD8000        LDMFD            sp!, {pc}
+  295 00000254         
+  296 00000254         upperLimitRed
+  297 00000254 E3A000FF        MOV              R0,#255     ; redComponent = 25
+                                                            5
+  298 00000258 EAFFFFF4        B                checkGreen
+  299 0000025C         
+  300 0000025C         lowerLimitRed
+
+
+
+ARM Macro Assembler    Page 9 
+
+
+  301 0000025C E3A00000        MOV              R0,#0       ; redComponent = 0
+  302 00000260 EAFFFFF2        B                checkGreen
+  303 00000264         
+  304 00000264         upperLimitGreen
+  305 00000264 E3A010FF        MOV              R1,#255     ; greenComponent = 
+                                                            255
+  306 00000268 EAFFFFF4        B                checkBlue
+  307 0000026C         
+  308 0000026C         lowerLimitGreen
+  309 0000026C E3A01000        MOV              R1,#0       ; greenComponent = 
+                                                            0
+  310 00000270 EAFFFFF2        B                checkBlue
+  311 00000274         
+  312 00000274         upperLimitBlue
+  313 00000274 E3A020FF        MOV              R2,#255     ; blueComponent = 2
+                                                            55
+  314 00000278 EAFFFFF4        B                endcheckVals
+  315 0000027C         
+  316 0000027C         lowerLimitBlue
+  317 0000027C E3A02000        MOV              R2,#0       ; blueComponent = 0
+                                                            
+  318 00000280 EAFFFFF2        B                endcheckVals
+  319 00000284         
+  320 00000284         
+  321 00000284         ; setPixelR subroutine
+  322 00000284         ; Sets the Red color component of a specified pixel in a
+                       
+  323 00000284         ; two-dimensional array of pixels.
+  324 00000284         ; parameters R0: starting address of the array
+  325 00000284         ;    R1: index i of pixel
+  326 00000284         ;    R2: index j of pixel
+  327 00000284         ;    R3: width of the array
+  328 00000284         ;      [SP]: value added to the stack
+  329 00000284         setPixelR
+  330 00000284 E92D4030        STMFD            SP!, {R4-R5, lr} 
+                                                            ; save registers
+  331 00000288         
+  332 00000288 E0010193        MUL              R1,R3,R1    ; row * rowSize
+  333 0000028C E0811002        ADD              R1,R1,R2    ; row*rowSize + col
+                                                            umn
+  334 00000290         
+  335 00000290 E7904101        LDR              R4,[R0, R1, LSL #2] ; pixel = M
+                                                            emory.Word[address 
+                                                            + (index*4)]
+  336 00000294         
+  337 00000294 E3C448FF        BIC              R4,R4,#0x00FF0000 ; clear the p
+                                                            ixel's current redC
+                                                            omponent value
+  338 00000298         
+  339 00000298 E59D500C        LDR              R5,[SP, #0 + 12] ; load the red
+                                                            Component value fro
+                                                            m the stack
+  340 0000029C E1A05805        MOV              R5,R5,LSL #16 ; shift redCompon
+                                                            ent value left by 1
+                                                            6 bits
+  341 000002A0         
+  342 000002A0 E0844005        ADD              R4,R4,R5    ; add this redCompo
+                                                            nent value to the p
+                                                            ixel
+
+
+
+ARM Macro Assembler    Page 10 
+
+
+  343 000002A4         
+  344 000002A4 E7804101        STR              R4, [R0, R1, LSL #2] ; Memory.W
+                                                            ord[address + (inde
+                                                            x*4)] = pixel
+  345 000002A8         
+  346 000002A8 E8BD8030        LDMFD            SP!, {R4-R5, pc} 
+                                                            ; restore registers
+                                                            
+  347 000002AC         
+  348 000002AC         
+  349 000002AC         ; setPixelG subroutine
+  350 000002AC         ; Sets the Green color component of a specified pixel in
+                        a
+  351 000002AC         ; two-dimensional array of pixels.
+  352 000002AC         ; parameters R0: starting address of the array
+  353 000002AC         ;    R1: index i of pixel
+  354 000002AC         ;    R2: index j of pixel
+  355 000002AC         ;    R3: width of the array
+  356 000002AC         ;      [SP]: value added to the stack
+  357 000002AC         setPixelG
+  358 000002AC E92D4030        STMFD            SP!, {R4-R5, lr} 
+                                                            ; save registers
+  359 000002B0         
+  360 000002B0 E0010193        MUL              R1,R3,R1    ; row * rowSize
+  361 000002B4 E0811002        ADD              R1,R1,R2    ; row*rowSize + col
+                                                            umn
+  362 000002B8         
+  363 000002B8 E7904101        LDR              R4,[R0, R1, LSL #2] ; pixel = M
+                                                            emory.Word[address 
+                                                            + (index*4)]
+  364 000002BC         
+  365 000002BC E3C44CFF        BIC              R4,R4,#0x0000FF00 ; clear the p
+                                                            ixel's current gree
+                                                            nComponent value
+  366 000002C0         
+  367 000002C0 E59D500C        LDR              R5,[SP, #0 + 12] ; load the gre
+                                                            enComponent value f
+                                                            rom the stack 
+  368 000002C4 E1A05405        MOV              R5,R5,LSL #8 ; shift the greenC
+                                                            omponent value left
+                                                             by 8 bits
+  369 000002C8         
+  370 000002C8 E0844005        ADD              R4,R4,R5    ; add this greenCom
+                                                            ponent value to the
+                                                             pixel
+  371 000002CC         
+  372 000002CC E7804101        STR              R4, [R0, R1, LSL #2] ; Memory.W
+                                                            ord[address + (inde
+                                                            x*4)] = pixel
+  373 000002D0         
+  374 000002D0 E8BD8030        LDMFD            SP!, {R4-R5, pc} 
+                                                            ; restore registers
+                                                            
+  375 000002D4         
+  376 000002D4         
+  377 000002D4         ; setPixelB subroutine
+  378 000002D4         ; Sets the Blue color component of a specified pixel in 
+                       a
+  379 000002D4         ; two-dimensional array of pixels.
+
+
+
+ARM Macro Assembler    Page 11 
+
+
+  380 000002D4         ; parameters R0: starting address of the array
+  381 000002D4         ;    R1: index i of pixel
+  382 000002D4         ;    R2: index j of pixel
+  383 000002D4         ;    R3: width of the array
+  384 000002D4         ;      [SP]: value added to the stack
+  385 000002D4         setPixelB
+  386 000002D4 E92D4030        STMFD            SP!, {R4-R5, lr} 
+                                                            ; save registers
+  387 000002D8         
+  388 000002D8 E0010193        MUL              R1,R3,R1    ; row * rowSize
+  389 000002DC E0811002        ADD              R1,R1,R2    ; row*rowSize + col
+                                                            umn
+  390 000002E0         
+  391 000002E0 E7904101        LDR              R4,[R0, R1, LSL #2] ; pixel = M
+                                                            emory.Word[address 
+                                                            + (index*4)]
+  392 000002E4         
+  393 000002E4 E3C440FF        BIC              R4,R4,#0x000000FF ; clear the p
+                                                            ixel's current blue
+                                                            Component value
+  394 000002E8         
+  395 000002E8 E59D500C        LDR              R5,[SP, #0 + 12] ; load the blu
+                                                            eComponent value fr
+                                                            om the system stack
+                                                            
+  396 000002EC         
+  397 000002EC E0844005        ADD              R4,R4,R5    ; add this blueComp
+                                                            onent value to the 
+                                                            pixel
+  398 000002F0         
+  399 000002F0 E7804101        STR              R4, [R0, R1, LSL #2] ; Memory.W
+                                                            ord[address + (addr
+                                                            ess*4)] = pixel
+  400 000002F4         
+  401 000002F4 E8BD8030        LDMFD            SP!, {R4-R5, pc} 
+                                                            ; restore registers
+                                                            
+  402 000002F8         
+  403 000002F8                 END
+              FFFFFF00 
+Command Line: --debug --xref --apcs=interwork --depend=Adjust.d -oAdjust.o -IC:
+\Keil\ARM\INC -IC:\Keil\ARM\INC\Philips --predefine="__EVAL SETA 1" --predefine
+="__MICROLIB SETA 1" --predefine="NO_CLOCK_SETUP SETA 1" --predefine="NO_EMC_SE
+TUP SETA 1" --predefine="RAM_INTVEC SETA 1" --predefine="RAM_MODE SETA 1" --pre
+define="REMAP SETA 1" --list=Adjust.lst Adjust.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+Adjust 00000000
+
+Symbol: Adjust
+   Definitions
+      At line 1 in file Adjust.s
+   Uses
+      None
+Comment: Adjust unused
+adjustImage 00000044
+
+Symbol: adjustImage
+   Definitions
+      At line 45 in file Adjust.s
+   Uses
+      At line 27 in file Adjust.s
+Comment: adjustImage used once
+checkBlue 00000240
+
+Symbol: checkBlue
+   Definitions
+      At line 286 in file Adjust.s
+   Uses
+      At line 306 in file Adjust.s
+      At line 310 in file Adjust.s
+
+checkGreen 00000230
+
+Symbol: checkGreen
+   Definitions
+      At line 279 in file Adjust.s
+   Uses
+      At line 298 in file Adjust.s
+      At line 302 in file Adjust.s
+
+checkRed 00000220
+
+Symbol: checkRed
+   Definitions
+      At line 272 in file Adjust.s
+   Uses
+      None
+Comment: checkRed unused
+checkVals 0000021C
+
+Symbol: checkVals
+   Definitions
+      At line 269 in file Adjust.s
+   Uses
+      At line 133 in file Adjust.s
+Comment: checkVals used once
+divide 000001F8
+
+Symbol: divide
+   Definitions
+      At line 250 in file Adjust.s
+   Uses
+      At line 97 in file Adjust.s
+      At line 108 in file Adjust.s
+      At line 119 in file Adjust.s
+
+
+
+ARM Macro Assembler    Page 2 Alphabetic symbol ordering
+Relocatable symbols
+
+
+endcheckVals 00000250
+
+Symbol: endcheckVals
+   Definitions
+      At line 293 in file Adjust.s
+   Uses
+      At line 314 in file Adjust.s
+      At line 318 in file Adjust.s
+
+endfori 000001A0
+
+Symbol: endfori
+   Definitions
+      At line 175 in file Adjust.s
+   Uses
+      At line 55 in file Adjust.s
+Comment: endfori used once
+endforj 00000198
+
+Symbol: endforj
+   Definitions
+      At line 171 in file Adjust.s
+   Uses
+      At line 60 in file Adjust.s
+Comment: endforj used once
+endwh 00000214
+
+Symbol: endwh
+   Definitions
+      At line 258 in file Adjust.s
+   Uses
+      At line 254 in file Adjust.s
+Comment: endwh used once
+fori 00000054
+
+Symbol: fori
+   Definitions
+      At line 53 in file Adjust.s
+   Uses
+      At line 174 in file Adjust.s
+Comment: fori used once
+forj 00000060
+
+Symbol: forj
+   Definitions
+      At line 58 in file Adjust.s
+   Uses
+      At line 170 in file Adjust.s
+Comment: forj used once
+getPixelB 000001DC
+
+Symbol: getPixelB
+   Definitions
+      At line 230 in file Adjust.s
+   Uses
+      At line 86 in file Adjust.s
+Comment: getPixelB used once
+getPixelG 000001BC
+
+
+
+ARM Macro Assembler    Page 3 Alphabetic symbol ordering
+Relocatable symbols
+
+
+Symbol: getPixelG
+   Definitions
+      At line 208 in file Adjust.s
+   Uses
+      At line 77 in file Adjust.s
+Comment: getPixelG used once
+getPixelR 000001A4
+
+Symbol: getPixelR
+   Definitions
+      At line 188 in file Adjust.s
+   Uses
+      At line 68 in file Adjust.s
+Comment: getPixelR used once
+lowerLimitBlue 0000027C
+
+Symbol: lowerLimitBlue
+   Definitions
+      At line 316 in file Adjust.s
+   Uses
+      At line 291 in file Adjust.s
+Comment: lowerLimitBlue used once
+lowerLimitGreen 0000026C
+
+Symbol: lowerLimitGreen
+   Definitions
+      At line 308 in file Adjust.s
+   Uses
+      At line 284 in file Adjust.s
+Comment: lowerLimitGreen used once
+lowerLimitRed 0000025C
+
+Symbol: lowerLimitRed
+   Definitions
+      At line 300 in file Adjust.s
+   Uses
+      At line 277 in file Adjust.s
+Comment: lowerLimitRed used once
+setPixelB 000002D4
+
+Symbol: setPixelB
+   Definitions
+      At line 385 in file Adjust.s
+   Uses
+      At line 164 in file Adjust.s
+Comment: setPixelB used once
+setPixelG 000002AC
+
+Symbol: setPixelG
+   Definitions
+      At line 357 in file Adjust.s
+   Uses
+      At line 156 in file Adjust.s
+Comment: setPixelG used once
+setPixelR 00000284
+
+Symbol: setPixelR
+   Definitions
+
+
+
+ARM Macro Assembler    Page 4 Alphabetic symbol ordering
+Relocatable symbols
+
+      At line 329 in file Adjust.s
+   Uses
+      At line 148 in file Adjust.s
+Comment: setPixelR used once
+start 00000000
+
+Symbol: start
+   Definitions
+      At line 10 in file Adjust.s
+   Uses
+      At line 7 in file Adjust.s
+Comment: start used once
+stop 00000040
+
+Symbol: stop
+   Definitions
+      At line 33 in file Adjust.s
+   Uses
+      At line 33 in file Adjust.s
+Comment: stop used once
+upperLimitBlue 00000274
+
+Symbol: upperLimitBlue
+   Definitions
+      At line 312 in file Adjust.s
+   Uses
+      At line 288 in file Adjust.s
+Comment: upperLimitBlue used once
+upperLimitGreen 00000264
+
+Symbol: upperLimitGreen
+   Definitions
+      At line 304 in file Adjust.s
+   Uses
+      At line 281 in file Adjust.s
+Comment: upperLimitGreen used once
+upperLimitRed 00000254
+
+Symbol: upperLimitRed
+   Definitions
+      At line 296 in file Adjust.s
+   Uses
+      At line 274 in file Adjust.s
+Comment: upperLimitRed used once
+wh 00000200
+
+Symbol: wh
+   Definitions
+      At line 253 in file Adjust.s
+   Uses
+      At line 257 in file Adjust.s
+Comment: wh used once
+28 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+External symbols
+
+getPicAddr 00000000
+
+Symbol: getPicAddr
+   Definitions
+      At line 3 in file Adjust.s
+   Uses
+      At line 11 in file Adjust.s
+Comment: getPicAddr used once
+getPicHeight 00000000
+
+Symbol: getPicHeight
+   Definitions
+      At line 6 in file Adjust.s
+   Uses
+      At line 13 in file Adjust.s
+Comment: getPicHeight used once
+getPicWidth 00000000
+
+Symbol: getPicWidth
+   Definitions
+      At line 5 in file Adjust.s
+   Uses
+      At line 15 in file Adjust.s
+Comment: getPicWidth used once
+main 00000000
+
+Symbol: main
+   Definitions
+      At line 2 in file Adjust.s
+   Uses
+      None
+Comment: main unused
+putPic 00000000
+
+Symbol: putPic
+   Definitions
+      At line 4 in file Adjust.s
+   Uses
+      At line 31 in file Adjust.s
+Comment: putPic used once
+5 symbols
+366 symbols in table
